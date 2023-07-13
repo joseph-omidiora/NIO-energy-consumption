@@ -1,5 +1,5 @@
 import numpy as np
-import cuckoo
+import cuckoo_func
 
 # Define the Griewank function
 def griewank(x):
@@ -8,7 +8,8 @@ def griewank(x):
     return 1 + term1 - term2
 
 # Define the search space and dimension
-search_space = [-600, 600] # search space for each dimension
+lb = -5.12
+ub = 5.12
 dim = 10 # dimension of the search space
 
 # Define the population size and maximum number of iterations
@@ -16,8 +17,10 @@ population_size = 10 *dim
 max_iterations = 100 * dim
 
 # Define the optimal value (i.e., the minimum value of the benchmark function)
-optimal_value = 0
+optimal_value = 1e-6
 
-# Call the GWO function to solve the benchmark function
-cuckoo.cuckoo_search(griewank, search_space, dim, population_size, max_iterations, optimal_value)
-
+# Call the cuckoo function to solve the benchmark function
+best_solution, best_fitness = cuckoo_func.cuckoo_search(griewank, dim, population_size, max_iterations, lb, ub)
+print("Test case: Griewank function")
+print("Best solution:", best_solution)
+print("Best fitness:", best_fitness)

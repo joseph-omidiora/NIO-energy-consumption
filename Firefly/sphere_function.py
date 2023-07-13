@@ -7,9 +7,9 @@ def sphere(x):
 
 
 # Define the search space and dimension
-lb = np.array([-5.12] * 20)
-ub = np.array([5.12] *20)
-dim = 20
+lb = np.array([-5.12] * 10)
+ub = np.array([5.12] *10)
+dim = 10
 
 
 # Define the optimal value

@@ -9,9 +9,9 @@ def griewank(x):
 
 
 # Define the search space and dimension
-lb = np.array([-600] * 20)
-ub = np.array([600] *20)
-dim = 20
+lb = np.array([-600] * 10)
+ub = np.array([600] *10)
+dim = 10
 
 
 # Define the optimal value

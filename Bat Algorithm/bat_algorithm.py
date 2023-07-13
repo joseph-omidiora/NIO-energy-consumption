@@ -1,56 +1,61 @@
 import numpy as np
-from benchmark_func import sphere
+import math
 
-def bat_algorithm(benchmark_func.sphere, search_space, dim, max_iter, optimal_val, population, loudness=0.5, pulse_rate=0.5):
-    """
-    Bat Algorithm for optimization.
-
-    Args:
-        benchmark_func (function): The function to be optimized.
-        search_space (ndarray): The search space.
-        dim (int): The dimensionality of the search space.
-        max_iter (int): The maximum number of iterations.
-        optimal_val (float): The optimal value of the benchmark function.
-        population (int): The number of bats in the population.
-        loudness (float, optional): The loudness of the bats. Defaults to 0.5.
-        pulse_rate (float, optional): The pulse rate of the bats. Defaults to 0.5.
-
-    Returns:
-        ndarray: The best solution found by the algorithm.
-        float: The fitness value of the best solution found by the algorithm.
-    """
-    # Initialization
-    bats = np.random.rand(population, dim) * (search_space[:, 1] - search_space[:, 0]) + search_space[:, 0]
-    velocities = np.zeros((population, dim))
-    fitness_values = np.apply_along_axis(benchmark_func, 1, bats)
-    best_bat = bats[np.argmin(fitness_values)]
-    best_fitness = np.min(fitness_values)
-
-    # Main loop
-    for t in range(max_iter):
-        # Update loudness and pulse rate
-        loudness *= 0.99
-        pulse_rate = 0.5 * (1 - np.exp(-0.5 * t))
-
-        # Update bat positions and velocities
-        for i in range(population):
-            frequencies = np.random.normal(0, 1, dim)
-            velocities[i] += (bats[i] - best_bat) * frequencies
-            bats[i] += velocities[i]
-
-            # Apply constraints
-            bats[i] = np.clip(bats[i], search_space[:, 0], search_space[:, 1])
-
-            # Generate a new solution with probability pulse_rate
-            if np.random.rand() < pulse_rate:
-                new_bat = best_bat + np.random.normal(0, 1, dim) * loudness
-                new_bat = np.clip(new_bat, search_space[:, 0], search_space[:, 1])
-                new_fitness = benchmark_func.sphere(new_bat)
-                if new_fitness < best_fitness:
-                    best_bat = new_bat
-                    best_fitness = new_fitness
-
-        # Display progress
-        print(f"Iteration {t+1}/{max_iter} - Best Fitness: {best_fitness:.4f} - Optimal Fitness: {optimal_val:.4f}")
-
-    return best_bat, best_fitness
+class BatAlgorithm:
+    def __init__(self, objective_func, dim, population_size=100, max_iter=1000, A=1, alpha=0.9, gamma=0.9, fmin=-5.12, fmax=5.12):
+        self.objective_func = objective_func
+        self.dim = dim
+        self.population_size = population_size
+        self.max_iter = max_iter
+        self.A = A
+        self.alpha = alpha
+        self.gamma = gamma
+        self.fmin = fmin
+        self.fmax = fmax
+        self.population = np.zeros((population_size, dim))
+        self.velocities = np.zeros((population_size, dim))
+        self.fitness = np.zeros(population_size)
+        self.loudness = np.ones(population_size)
+        self.pulse_rate = np.zeros(population_size)
+        self.location = np.zeros((population_size, dim))
+        self.fitness_best = np.inf
+        self.location_best = np.zeros(dim)
+        
+    def init_population(self):
+        self.population = np.random.uniform(self.fmin, self.fmax, (self.population_size, self.dim))
+        self.velocities = np.zeros((self.population_size, self.dim))
+        self.fitness = np.zeros(self.population_size)
+        self.loudness = np.ones(self.population_size)
+        self.pulse_rate = np.zeros(self.population_size)
+        self.location = self.population.copy()
+        
+    def evaluate_fitness(self):
+        for i in range(self.population_size):
+            self.fitness[i] = self.objective_func(self.population[i])
+            if self.fitness[i] < self.fitness_best:
+                self.fitness_best = self.fitness[i]
+                self.location_best = self.population[i].copy()
+                
+    def move_bats(self, iter):
+        for i in range(self.population_size):
+            self.velocities[i] += (self.location_best - self.population[i]) * self.A * np.exp(-self.alpha * iter)
+            self.population[i] += self.velocities[i]
+            if np.random.uniform(0, 1) > self.pulse_rate[i]:
+                self.population[i] = self.location_best + self.gamma * np.random.uniform(-1, 1, self.dim) * (self.fmax - self.fmin)
+            self.population[i] = np.clip(self.population[i], self.fmin, self.fmax)
+            
+    def update_bats(self, iter):
+        for i in range(self.population_size):
+            if np.random.uniform(0, 1) < self.loudness[i]:
+                self.pulse_rate[i] = np.exp(-self.gamma * iter)
+                self.loudness[i] *= self.alpha
+                self.location[i] = self.population[i].copy()
+    
+    def optimize(self):
+        self.init_population()
+        for i in range(self.max_iter):
+            self.evaluate_fitness()
+            print(f"Iteration {i+1}: Best fitness: {self.fitness_best}")
+            self.move_bats(i)
+            self.update_bats(i)
+        return self.fitness_best, self.location_best
